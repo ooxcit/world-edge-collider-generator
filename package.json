@@ -1,8 +1,8 @@
 {
-  "name": "com.oox.packagename",
-  "version": "0.1.2",
-  "displayName": "Oox Package name",
-  "description": "Package description",
+  "name": "com.oox.world-edge-collider-generator",
+  "version": "0.0.1",
+  "displayName": "Oox World Edge Collider Generator",
+  "description": "Generates box colliders based on a mesh.",
   "unity": "2022.3",
   "author": {
     "name": "Oox Limited",
