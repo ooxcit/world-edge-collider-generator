@@ -1,0 +1,19 @@
+{
+  "name": "com.oox.packagename",
+  "version": "0.1.2",
+  "displayName": "Oox Package name",
+  "description": "Package description",
+  "unity": "2022.3",
+  "author": {
+    "name": "Oox Limited",
+    "email": "admin@ooxcit.com",
+    "url": "https://ooxlimited.com/"
+  },
+  "contributors": [
+    {
+      "name": "Luka Miljus",
+      "email": "lukamiljus336@gmail.com",
+      "url": "https://github.com/lukamiljus123"
+    }
+  ]
+}
