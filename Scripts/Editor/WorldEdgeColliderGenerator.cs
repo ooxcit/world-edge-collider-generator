@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,49 +8,33 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
 {
     public class WorldEdgeCollidersGenerator : MonoBehaviour
     {
-        [SerializeField] private Mesh _mesh;
+        [SerializeField] private List<Vector3> _points = new();
         [SerializeField] private Transform _boxParent;
-        [SerializeField] private bool _firstIsDifferent;
-        [SerializeField] private bool _reverseXY;
-        [SerializeField, Range(0, 3)] private int _bVertex;
 
-        [Space]
-
+        [Header("Dimensions")]
+        [SerializeField] private float _height = 1f;
         [SerializeField] private float _thickness = 0.1f;
 
-        [SerializeField] private Transform _a;
-        [SerializeField] private Transform _b;
-        [SerializeField] private Transform _c;
+        public List<Vector3> Points => _points;
 
-        public float CalculateAngle()
+        public void AddPoint(Vector3 localPoint)
         {
-            return CalculateAngle(_a.position, _b.position, _c.position);
+            _points.Add(localPoint);
         }
 
-        private static float CalculateAngle(Vector3 a, Vector3 b, Vector3 c)
+        public void SetPoint(int index, Vector3 localPoint)
         {
-            var ab = b - a;
-            var ac = c - a;
-            var dot = Vector3.Dot(ab, ac);
-            var abMag = ab.magnitude;
-            var acMag = ac.magnitude;
-            var cos = dot / (abMag * acMag);
-            var theta = Mathf.Acos(cos);
-            var angle = Mathf.Rad2Deg * theta;
-            var cross = Vector3.Cross(ab, ac);
-            return cross.y < 0 ? angle : -angle;
+            _points[index] = localPoint;
         }
 
-        private void OnValidate()
+        public void RemovePointAt(int index)
         {
-            if (!_mesh)
-            {
-                _mesh = GetComponentInChildren<MeshFilter>().sharedMesh;
-            }
-            if (!_boxParent)
-            {
-                _boxParent = GetComponentInChildren<MeshFilter>().transform;
-            }
+            _points.RemoveAt(index);
+        }
+
+        public void ClearPoints()
+        {
+            _points.Clear();
         }
 
         public void GenerateBoxColliders()
@@ -59,111 +44,44 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
 
         private IEnumerator GenerateBoxCollidersCoroutine()
         {
-            var vertices = _mesh.vertices;
-            for (var i = 0; i < vertices.Length; i += 4)
+            for (var i = 0; i < _points.Count; i++)
             {
-                Vector3 vertex0;
-                Vector3 vertex1;
-                Vector3 vertex2;
-                Vector3 vertex3;
-                if (_firstIsDifferent && i == 0)
-                {
-                    vertex0 = vertices[i + 1];
-                    vertex1 = vertices[i + 2];
-                    vertex2 = vertices[i + 3];
-                    vertex3 = vertices[i];
-                }
-                else
-                {
-                    vertex0 = vertices[i];
-                    vertex1 = vertices[i + 1];
-                    vertex2 = vertices[i + 2];
-                    vertex3 = vertices[i + 3];
-                }
-                var fourVertices = new [] { vertex0, vertex1, vertex2, vertex3 };
+                var vertex0 = transform.TransformPoint(_points[i]);
+                var vertex1 = transform.TransformPoint(_points[(i + 1) % _points.Count]);
+                var vertex2 = vertex0 + Vector3.up * _height;
+                var vertex3 = vertex1 + Vector3.up * _height;
 
-                var box = new GameObject("Box " + i / 4);
+                var box = new GameObject("Box " + i);
                 box.AddComponent<BoxCollider>();
-
                 var boxTransform = box.transform;
                 boxTransform.parent = _boxParent;
-                var boxCenter = (vertex0 + vertex1 + vertex2 + vertex3) / 4;
+
+                #region Position
+
+                var boxCenter = (vertex0 + vertex1 + vertex2 + vertex3) / 4f;
                 boxTransform.position = boxCenter;
+
+                #endregion Position
+
+                #region Rotation
+
+                var dir = vertex1 - vertex0;
+                var angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+                boxTransform.rotation = Quaternion.Euler(0f, angle, 0f);
+
+                #endregion Rotation
+
+                #region Scale
 
                 var scale = new Vector3
                 {
-                    x = Vector3.Distance((vertex1 + vertex2) * 0.5f, boxCenter) * 2,
-                    y = Vector3.Distance((vertex0 + vertex1) * 0.5f, boxCenter) * 2,
-                    z = _thickness
+                    x = _thickness,
+                    y = Vector3.Distance((vertex0 + vertex1) * 0.5f, boxCenter) * 2f,
+                    z = Vector3.Distance((vertex0 + vertex2) * 0.5f, boxCenter) * 2f
                 };
-                if (_reverseXY)
-                {
-                    (scale.x, scale.y) = (scale.y, scale.x);
-                }
                 boxTransform.localScale = scale;
 
-                #region rotation
-
-                var a = boxCenter + new Vector3(0, scale.y / 2, 0);
-                var b = fourVertices[_bVertex];
-                var c = boxCenter + new Vector3(-scale.x / 2, scale.y / 2, 0);
-
-                /*var center = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                center.name = "center";
-                var aa = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                aa.name = "aa";
-                var bb = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                bb.name = "bb";
-                var cc = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                cc.name = "cc";
-                center.position = vertex0;
-                aa.position = vertex1;
-                bb.position = vertex2;
-                cc.position = vertex3;
-                aa.localScale = Vector3.one * 0.7f;
-                bb.localScale = Vector3.one * 0.5f;
-                cc.localScale = Vector3.one * 0.3f;*/
-
-                var angle = CalculateAngle(a, b, c);
-                boxTransform.rotation = Quaternion.Euler(0, angle, 0);
-
-                if (i == 100)
-                {
-                    i -= 2;
-                }
-
-                /*if (i == 2 * 4)
-                {
-                    var center = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                    var aa = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                    var bb = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                    var cc = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                    center.position = boxCenter;
-                    aa.position = a;
-                    bb.position = b;
-                    cc.position = c;
-                    aa.localScale = Vector3.one * 0.5f;
-                    bb.localScale = Vector3.one * 0.3f;
-                    cc.localScale = Vector3.one * 0.1f;
-                    yield break;
-                }*/
-
-                /*if (i == 2 * 4)
-                {
-                    var aa = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                    var bb = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                    var cc = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                    var dd = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                    var ee = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                    aa.position = vertex0;
-                    bb.position = vertex1;
-                    cc.position = vertex2;
-                    dd.position = vertex3;
-                    ee.position = boxCenter;
-                    yield break;
-                }*/
-
-                #endregion
+                #endregion Scale
 
                 yield return null;
             }
