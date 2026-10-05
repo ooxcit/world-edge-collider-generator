@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 
@@ -11,8 +10,14 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
         private const float InsertHandleSize = 0.05f;
         private const float DragThresholdPixels = 6f;
 
+        // Hinted control IDs stay stable when the selected point's position handle appears or disappears mid-drag.
+        private static readonly int PointControlHint = "WorldEdgePoint".GetHashCode();
+
         private static readonly Color LineColor = new(0.2f, 0.9f, 1f, 1f);
         private static readonly Color ClosingLineColor = new(0.2f, 0.9f, 1f, 0.45f);
+        private static readonly Color WallColor = new(0.2f, 0.9f, 1f, 0.12f);
+        private static readonly Color WallTopColor = new(0.2f, 0.9f, 1f, 0.5f);
+        private static readonly Color ColliderColor = new(0.45f, 1f, 0.45f, 0.9f);
         private static readonly Color PointColor = new(1f, 1f, 1f, 1f);
         private static readonly Color SelectedPointColor = new(1f, 0.8f, 0.1f, 1f);
         private static readonly Color InsertColor = new(0.4f, 1f, 0.4f, 0.8f);
@@ -23,6 +28,7 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
         private bool _hasPreview;
         private Vector3 _previewWorldPoint;
         private Vector2 _rightMouseDownPosition;
+        private Vector2 _pointMouseDownPosition;
         private Rect _overlayRect;
         private bool _suppressContextClick;
 
@@ -78,11 +84,11 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
 
             if (GUILayout.Button("Generate Box Colliders"))
             {
-                generator.GenerateBoxColliders();
+                WorldEdgeBoxColliderBuilder.GenerateBoxColliders(generator);
             }
             if (GUILayout.Button("Clear Box Colliders"))
             {
-                generator.ClearBoxColliders();
+                WorldEdgeBoxColliderBuilder.ClearBoxColliders(generator);
             }
         }
 
@@ -262,14 +268,36 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
             var generatorTransform = generator.transform;
             var currentEvent = Event.current;
 
+            // Full position handle on the selected point for precise (including vertical) adjustments.
+            // Drawn before the point dots so grabbing a dot's center moves the dot, not the gizmo.
+            if (_selectedIndex >= 0)
+            {
+                var worldPoint = generatorTransform.TransformPoint(points[_selectedIndex]);
+                EditorGUI.BeginChangeCheck();
+                var newWorldPoint = Handles.PositionHandle(worldPoint, Quaternion.identity);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(generator, "Move Point");
+                    generator.SetPoint(_selectedIndex, generatorTransform.InverseTransformPoint(newWorldPoint));
+                    EditorUtility.SetDirty(generator);
+                }
+            }
+
             for (var i = 0; i < points.Count; i++)
             {
                 var worldPoint = generatorTransform.TransformPoint(points[i]);
                 var size = HandleUtility.GetHandleSize(worldPoint) * PointHandleSize;
-                var controlId = GUIUtility.GetControlID(FocusType.Passive);
+                var controlId = GUIUtility.GetControlID(PointControlHint, FocusType.Passive);
 
+                // A point is selected by clicking it without dragging, so its position handle never appears mid-drag.
                 if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0 &&
                     HandleUtility.nearestControl == controlId)
+                {
+                    _pointMouseDownPosition = currentEvent.mousePosition;
+                }
+                else if (currentEvent.type == EventType.MouseUp && currentEvent.button == 0 &&
+                         GUIUtility.hotControl == controlId &&
+                         (currentEvent.mousePosition - _pointMouseDownPosition).magnitude < DragThresholdPixels)
                 {
                     _selectedIndex = i;
                     Repaint();
@@ -286,20 +314,6 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
                         generator.SetPoint(i, generatorTransform.InverseTransformPoint(newWorldPoint));
                         EditorUtility.SetDirty(generator);
                     }
-                }
-            }
-
-            // Full position handle on the selected point for precise (including vertical) adjustments.
-            if (_selectedIndex >= 0)
-            {
-                var worldPoint = generatorTransform.TransformPoint(points[_selectedIndex]);
-                EditorGUI.BeginChangeCheck();
-                var newWorldPoint = Handles.PositionHandle(worldPoint, Quaternion.identity);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    Undo.RecordObject(generator, "Move Point");
-                    generator.SetPoint(_selectedIndex, generatorTransform.InverseTransformPoint(newWorldPoint));
-                    EditorUtility.SetDirty(generator);
                 }
             }
 
@@ -365,6 +379,9 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
             var points = generator.Points;
             var generatorTransform = generator.transform;
 
+            DrawWallPreview(generator);
+            DrawGeneratedColliders(generator);
+
             for (var i = 0; i < points.Count; i++)
             {
                 var worldPoint = generatorTransform.TransformPoint(points[i]);
@@ -405,6 +422,70 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
             }
         }
 
+        /// <summary>
+        /// Draws the area the generated colliders will cover as translucent walls.
+        /// </summary>
+        private static void DrawWallPreview(WorldEdgeCollidersGenerator generator)
+        {
+            var points = generator.Points;
+            if (points.Count < 2)
+            {
+                return;
+            }
+
+            var generatorTransform = generator.transform;
+            var up = Vector3.up * generator.Height;
+            var segmentCount = points.Count == 2 ? 1 : points.Count;
+            var quad = new Vector3[4];
+            for (var i = 0; i < segmentCount; i++)
+            {
+                var bottom0 = generatorTransform.TransformPoint(points[i]);
+                var bottom1 = generatorTransform.TransformPoint(points[(i + 1) % points.Count]);
+                quad[0] = bottom0;
+                quad[1] = bottom1;
+                quad[2] = bottom1 + up;
+                quad[3] = bottom0 + up;
+
+                using (new Handles.DrawingScope(WallColor))
+                {
+                    Handles.DrawAAConvexPolygon(quad);
+                }
+                using (new Handles.DrawingScope(WallTopColor))
+                {
+                    Handles.DrawAAPolyLine(2f, quad[2], quad[3]);
+                    Handles.DrawAAPolyLine(2f, quad[0], quad[3]);
+                }
+            }
+        }
+
+        private static void DrawGeneratedColliders(WorldEdgeCollidersGenerator generator)
+        {
+            foreach (Transform child in generator.BoxParent)
+            {
+                if (!child.TryGetComponent<BoxCollider>(out var box))
+                {
+                    continue;
+                }
+                using (new Handles.DrawingScope(ColliderColor, child.localToWorldMatrix))
+                {
+                    Handles.DrawWireCube(box.center, box.size);
+                }
+            }
+        }
+
+        private static int CountGeneratedColliders(WorldEdgeCollidersGenerator generator)
+        {
+            var count = 0;
+            foreach (Transform child in generator.BoxParent)
+            {
+                if (child.TryGetComponent<BoxCollider>(out _))
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
         private void DrawSceneOverlay(WorldEdgeCollidersGenerator generator)
         {
             Handles.BeginGUI();
@@ -441,10 +522,17 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
             else
             {
                 GUILayout.BeginHorizontal();
-                GUILayout.Label($"World Edge: {generator.Points.Count} points", EditorStyles.boldLabel);
+                GUILayout.Label($"{generator.Points.Count} points, {CountGeneratedColliders(generator)} colliders", EditorStyles.boldLabel);
                 if (GUILayout.Button(generator.Points.Count == 0 ? "Place Points" : "Add Points", GUILayout.Width(110)))
                 {
                     SetPlacing(true);
+                }
+                using (new EditorGUI.DisabledScope(generator.Points.Count < 2))
+                {
+                    if (GUILayout.Button("Generate Colliders", GUILayout.Width(130)))
+                    {
+                        WorldEdgeBoxColliderBuilder.GenerateBoxColliders(generator);
+                    }
                 }
                 GUILayout.EndHorizontal();
             }
@@ -485,4 +573,3 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
         }
     }
 }
-#endif

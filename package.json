@@ -2,8 +2,16 @@
   "name": "com.oox.world-edge-collider-generator",
   "version": "0.2.0",
   "displayName": "Oox World Edge Collider Generator",
-  "description": "Generates box colliders along a path of points placed and edited directly in the Scene view.",
-  "unity": "2022.3",
+  "description": "Generates box colliders along a path of points placed and edited directly in the Scene view. Use it to wall off the edges of your levels.",
+  "unity": "6000.0",
+  "license": "MIT",
+  "keywords": [
+    "collider",
+    "boundary",
+    "level design",
+    "editor",
+    "tool"
+  ],
   "author": {
     "name": "Oox Limited",
     "email": "admin@ooxcit.com",
@@ -14,6 +22,20 @@
       "name": "Luka Miljus",
       "email": "lukamiljus336@gmail.com",
       "url": "https://github.com/lukamiljus123"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ooxcit/world-edge-collider-generator.git"
+  },
+  "documentationUrl": "https://github.com/ooxcit/world-edge-collider-generator#readme",
+  "changelogUrl": "https://github.com/ooxcit/world-edge-collider-generator/blob/master/CHANGELOG.md",
+  "licensesUrl": "https://github.com/ooxcit/world-edge-collider-generator/blob/master/LICENSE.md",
+  "samples": [
+    {
+      "displayName": "Basic Setup",
+      "description": "A ready-made generator with points around a small level. Works with any render pipeline.",
+      "path": "Samples~/BasicSetup"
     }
   ]
 }
