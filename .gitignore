@@ -1,0 +1,34 @@
+# This repository is a Unity package (UPM), not a Unity project.
+# Unity generates nothing here except .meta files, which must be committed.
+
+# IDEs
+.idea/
+.vs/
+.vscode/
+*.csproj
+*.sln
+*.sln.DotSettings.user
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity project folders, in case the package is opened as a project by mistake
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini

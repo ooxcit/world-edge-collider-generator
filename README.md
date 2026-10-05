@@ -1,28 +1,59 @@
-# Oox World Edge Collider Generator
+# World Edge Collider Generator
 
-Generates a chain of box colliders along a path of points placed and edited directly in the Scene view.
+Wall off the edges of your Unity levels in seconds. Click around your level in the Scene view to place points, and the tool generates a chain of box colliders along them so players can't fall off the world.
+
+![Placing points and generating colliders in the Scene view](Documentation~/demo.gif)
 
 ## Features
-- Place points by clicking in the Scene view, with a live preview and surface snapping.
-- Drag, insert and delete points directly in the Scene view, or edit the list numerically in the inspector.
-- Generate box colliders along the path, closing the loop from the last point back to the first.
-- Clear the generated colliders (or the points) and start over.
+- Place points by clicking in the Scene view, with a live preview of the path and the walls it will create.
+- Points snap to the geometry under the cursor; hold Shift to keep them level.
+- Drag, insert and delete points right in the Scene view, or edit them in the inspector.
+- Generate the colliders with one click, and regenerate them any time you change the path. Everything is undoable.
+- Works with the Built-in Render Pipeline, URP and HDRP. The component adds nothing at runtime beyond the colliders it creates.
+
+## Requirements
+Unity 6 (6000.0) or newer.
 
 ## Installation
-1. Add this package to your Unity project via the Package Manager or by including it as a Git dependency in your `manifest.json` file:
-   ```json
-   {
-      "dependencies": {
-        "com.oox.world-edge-collider-generator": "https://github.com/ooxcit/world-edge-collider-generator.git"
-      }
-   }
-   ```
-2. Open Unity, and the package will automatically be installed.
+In Unity, open **Window > Package Manager**, click **+ > Install package from git URL...** and enter:
+
+```
+https://github.com/ooxcit/world-edge-collider-generator.git
+```
+
+Or add it to `Packages/manifest.json`:
+
+```json
+{
+  "dependencies": {
+    "com.oox.world-edge-collider-generator": "https://github.com/ooxcit/world-edge-collider-generator.git"
+  }
+}
+```
+
+To pin a version, append a tag to the URL, for example `#v0.2.0`.
 
 ## Usage
-1. Add the **World Edge Collider Generator** component to a `GameObject` in your scene.
-2. Optionally assign a **Box Parent** transform — the generated `BoxCollider` `GameObject`s will be parented under it (defaults to the generator itself).
-3. Set the **Height** and **Thickness** of the generated colliders.
-4. Select the component and press **Place Points** (in the inspector or in the panel at the bottom of the Scene view), then click in the Scene view to add points along the edge you want to cover. Points snap to the geometry under the cursor; hold Shift to stay level with the previous point. Backspace removes the last point. Press Esc, Enter, right-click or **Done** to stop placing.
-5. Drag any point to move it. Click a point to select it (its move gizmo allows vertical adjustments) and press Delete to remove it. Click the green dot in the middle of a segment to insert a point there. The **Points** list can also be edited in the inspector.
-6. Press **Generate Box Colliders** to create the colliders. Press **Clear Box Colliders** to remove them, or **Clear Points** to reset the path.
+1. Add the **World Edge Collider Generator** component (**Add Component > Oox > World Edge Collider Generator**) to a GameObject.
+2. Set the **Height** and **Thickness** of the colliders. Optionally assign a **Box Parent** for the generated colliders; by default they are created under the generator itself.
+3. Press **Place Points** in the panel at the bottom of the Scene view (or in the inspector) and click along the edge you want to wall off.
+   - The translucent walls show what the colliders will cover.
+   - Hold Shift to stay level with the previous point instead of snapping to the geometry under the cursor.
+   - Backspace removes the last point.
+   - Press Esc, Enter, right-click or **Done** to finish.
+4. Adjust the path:
+   - Drag a point to move it.
+   - Click a point to select it. Its move gizmo allows vertical adjustments, and Delete removes it.
+   - Click the green dot in the middle of a segment to insert a point there.
+5. Press **Generate Colliders**. The generated colliders are drawn in green while the generator is selected. Generating again replaces them, and **Clear Box Colliders** in the inspector removes them.
+
+The path is always closed: the last point connects back to the first.
+
+## Samples
+Import **Basic Setup** from the package's **Samples** tab in the Package Manager for a ready-made generator around a small terrain. It works in any render pipeline.
+
+## Contributing
+Issues and pull requests are welcome. Changes reach `master` through reviewed pull requests only.
+
+## License
+[MIT](LICENSE.md) © Oox Limited

@@ -11,16 +11,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Scene view panel showing the point count with a **Place Points** / **Done** button, so placing can be started and finished without the inspector.
+- Scene view panel with the point and collider counts and **Place Points** / **Done** / **Generate Colliders** buttons, so the whole workflow happens in the Scene view.
 - Placing preview: a ghost point under the cursor plus the segment from the last point and the closing segment back to the first.
+- Translucent walls showing the area the colliders will cover, and green outlines of the generated colliders while the generator is selected.
 - Finish placing with Esc, Enter, a right-click (right-drag still orbits the camera) or the **Done** button; Backspace removes the last placed point.
 - Points snap to scene geometry under the cursor (hold Shift to stay level with the previous point).
 - Click a point to select it (Delete removes it); click the green dot in the middle of a segment to insert a point.
+- **Basic Setup** sample that works in any render pipeline.
 
 ### Changed
 
+- **Breaking:** the component moved to a runtime assembly (`Oox.WorldEdgeColliderGenerator`) and namespace (`Oox.WorldEdgeColliderGenerator`), so scenes that use it no longer report a missing script in player builds. Generating and clearing colliders moved to `WorldEdgeBoxColliderBuilder` in the editor assembly. Existing scenes keep their references.
+- Generating colliders replaces previously generated ones instead of adding duplicates.
 - Points are small draggable dots instead of a full move gizmo each; the selected point gets a move gizmo for vertical adjustments.
 - The object's own transform gizmo is hidden while placing points so it can't be grabbed by accident.
+- Requires Unity 6 (6000.0) or newer.
+- Licensed under MIT.
 
 ### Fixed
 

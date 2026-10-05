@@ -1,12 +1,8 @@
 {
-    "name": "Oox.WorldEdgeColliderGenerator.Editor",
-    "rootNamespace": "Oox.WorldEdgeColliderGenerator.Editor",
-    "references": [
-        "Oox.WorldEdgeColliderGenerator"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "name": "Oox.WorldEdgeColliderGenerator",
+    "rootNamespace": "Oox.WorldEdgeColliderGenerator",
+    "references": [],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
