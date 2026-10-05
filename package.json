@@ -1,6 +1,6 @@
 {
   "name": "com.oox.world-edge-collider-generator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "Oox World Edge Collider Generator",
   "description": "Generates box colliders along a path of points placed and edited directly in the Scene view.",
   "unity": "2022.3",
