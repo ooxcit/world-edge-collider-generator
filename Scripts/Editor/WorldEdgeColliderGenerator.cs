@@ -1,5 +1,4 @@
 #if UNITY_EDITOR
-using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -22,6 +21,11 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
             _points.Add(localPoint);
         }
 
+        public void InsertPoint(int index, Vector3 localPoint)
+        {
+            _points.Insert(index, localPoint);
+        }
+
         public void SetPoint(int index, Vector3 localPoint)
         {
             _points[index] = localPoint;
@@ -37,13 +41,14 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
             _points.Clear();
         }
 
+        // Falls back to this transform so generating never fails on a missing reference.
+        private Transform BoxParent => _boxParent != null ? _boxParent : transform;
+
         public void GenerateBoxColliders()
         {
-            StartCoroutine(GenerateBoxCollidersCoroutine());
-        }
-
-        private IEnumerator GenerateBoxCollidersCoroutine()
-        {
+            Undo.IncrementCurrentGroup();
+            var undoGroup = Undo.GetCurrentGroup();
+            var boxParent = BoxParent;
             for (var i = 0; i < _points.Count; i++)
             {
                 var vertex0 = transform.TransformPoint(_points[i]);
@@ -54,7 +59,8 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
                 var box = new GameObject("Box " + i);
                 box.AddComponent<BoxCollider>();
                 var boxTransform = box.transform;
-                boxTransform.parent = _boxParent;
+                boxTransform.parent = boxParent;
+                Undo.RegisterCreatedObjectUndo(box, "Generate Box Colliders");
 
                 #region Position
 
@@ -82,22 +88,24 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
                 boxTransform.localScale = scale;
 
                 #endregion Scale
-
-                yield return null;
             }
-            EditorUtility.SetDirty(this);
+            Undo.CollapseUndoOperations(undoGroup);
         }
 
         public void ClearBoxColliders()
         {
-            StopAllCoroutines();
-            while (_boxParent.childCount > 0)
+            Undo.IncrementCurrentGroup();
+            var undoGroup = Undo.GetCurrentGroup();
+            var boxParent = BoxParent;
+            for (var i = boxParent.childCount - 1; i >= 0; i--)
             {
-                foreach (Transform box in _boxParent)
+                var box = boxParent.GetChild(i);
+                if (box.GetComponent<BoxCollider>() != null)
                 {
-                    DestroyImmediate(box.gameObject);
+                    Undo.DestroyObjectImmediate(box.gameObject);
                 }
             }
+            Undo.CollapseUndoOperations(undoGroup);
         }
     }
 }
