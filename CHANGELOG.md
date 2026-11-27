@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 - Upcoming features will be listed here.
 
+## [0.2.1] - 2026-11-27
+
+### Changed
+
+- The samples assembly (`Oox.WorldEdgeColliderGenerator.Samples`) is no longer auto-referenced, so game scripts outside an assembly definition don't see the sample types. Reference it from your own asmdef if you use them.
+
 ## [0.2.0] - 2026-10-05
 
 ### Added

@@ -1,6 +1,6 @@
 {
   "name": "com.oox.world-edge-collider-generator",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "displayName": "Oox World Edge Collider Generator",
   "description": "Generates box colliders along a path of points placed and edited directly in the Scene view. Use it to wall off the edges of your levels.",
   "unity": "6000.0",
