@@ -462,7 +462,7 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
         {
             foreach (Transform child in generator.BoxParent)
             {
-                if (!child.TryGetComponent<BoxCollider>(out var box))
+                if (!WorldEdgeBoxColliderBuilder.IsGenerated(child) || !child.TryGetComponent<BoxCollider>(out var box))
                 {
                     continue;
                 }
@@ -478,7 +478,7 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
             var count = 0;
             foreach (Transform child in generator.BoxParent)
             {
-                if (child.TryGetComponent<BoxCollider>(out _))
+                if (WorldEdgeBoxColliderBuilder.IsGenerated(child))
                 {
                     count++;
                 }

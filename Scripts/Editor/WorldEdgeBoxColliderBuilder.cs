@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,6 +9,11 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
     /// </summary>
     public static class WorldEdgeBoxColliderBuilder
     {
+        private const string BOX_NAME_PREFIX = "Box ";
+        // A box from before the marker component: a Transform and a BoxCollider, named like "Box 3".
+        private const int LEGACY_BOX_COMPONENT_COUNT = 2;
+        private static readonly Regex LEGACY_BOX_NAME = new("^" + BOX_NAME_PREFIX + "[0-9]+$");
+
         /// <summary>
         /// Replaces any previously generated box colliders with a new set along the generator's points.
         /// </summary>
@@ -27,8 +33,9 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
                 var vertex2 = vertex0 + Vector3.up * generator.Height;
                 var vertex3 = vertex1 + Vector3.up * generator.Height;
 
-                var box = new GameObject("Box " + i);
+                var box = new GameObject(BOX_NAME_PREFIX + i);
                 box.AddComponent<BoxCollider>();
+                box.AddComponent<WorldEdgeGeneratedCollider>();
                 var boxTransform = box.transform;
                 boxTransform.parent = boxParent;
                 Undo.RegisterCreatedObjectUndo(box, "Generate Box Colliders");
@@ -72,13 +79,28 @@ namespace Oox.WorldEdgeColliderGenerator.Editor
             Undo.CollapseUndoOperations(undoGroup);
         }
 
+        /// <summary>
+        /// Whether this child of the box parent is a collider the generator made (not one of your own).
+        /// </summary>
+        public static bool IsGenerated(Transform child)
+        {
+            if (child.TryGetComponent<WorldEdgeGeneratedCollider>(out _))
+            {
+                return true;
+            }
+            return child.childCount == 0
+                   && LEGACY_BOX_NAME.IsMatch(child.name)
+                   && child.TryGetComponent<BoxCollider>(out _)
+                   && child.GetComponents<Component>().Length == LEGACY_BOX_COMPONENT_COUNT;
+        }
+
         private static void RemoveBoxColliders(WorldEdgeCollidersGenerator generator)
         {
             var boxParent = generator.BoxParent;
             for (var i = boxParent.childCount - 1; i >= 0; i--)
             {
                 var box = boxParent.GetChild(i);
-                if (box.GetComponent<BoxCollider>() != null)
+                if (IsGenerated(box))
                 {
                     Undo.DestroyObjectImmediate(box.gameObject);
                 }
