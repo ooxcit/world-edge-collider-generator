@@ -6,6 +6,8 @@ namespace Oox.WorldEdgeColliderGenerator.Tests.Editor
 {
     public class WorldEdgeBoxColliderBuilderTests
     {
+        private const float TOLERANCE = 1e-4f;
+
         private GameObject _generatorObject;
         private WorldEdgeCollidersGenerator _generator;
 
@@ -47,6 +49,37 @@ namespace Oox.WorldEdgeColliderGenerator.Tests.Editor
             WorldEdgeBoxColliderBuilder.ClearBoxColliders(_generator);
             Assert.AreEqual(1, _generatorObject.transform.childCount);
             Assert.AreSame(ownCollider.transform, _generatorObject.transform.GetChild(0));
+        }
+
+        [Test]
+        public void Generate_SlopedEdge_WallFollowsTheEdge()
+        {
+            _generator.SetPoint(1, new Vector3(4f, 3f, 0f));
+
+            WorldEdgeBoxColliderBuilder.GenerateBoxColliders(_generator);
+
+            var box = _generatorObject.transform.GetChild(0).GetComponent<BoxCollider>();
+            var bottomStart = box.transform.TransformPoint(box.center + new Vector3(0f, -box.size.y, -box.size.z) * 0.5f);
+            var bottomEnd = box.transform.TransformPoint(box.center + new Vector3(0f, -box.size.y, box.size.z) * 0.5f);
+            Assert.That(Vector3.Distance(Vector3.zero, bottomStart), Is.LessThan(TOLERANCE));
+            Assert.That(Vector3.Distance(new Vector3(4f, 3f, 0f), bottomEnd), Is.LessThan(TOLERANCE));
+        }
+
+        [Test]
+        public void Generate_ScaledBoxParent_KeepsWorldSizes()
+        {
+            _generatorObject.transform.localScale = new Vector3(2f, 2f, 2f);
+            _generator.ClearPoints();
+            _generator.AddPoint(Vector3.zero);
+            _generator.AddPoint(new Vector3(2f, 0f, 0f));
+
+            WorldEdgeBoxColliderBuilder.GenerateBoxColliders(_generator);
+
+            var box = _generatorObject.transform.GetChild(0).GetComponent<BoxCollider>();
+            var worldLength = box.size.z * box.transform.lossyScale.z;
+            var worldHeight = box.size.y * box.transform.lossyScale.y;
+            Assert.AreEqual(4f, worldLength, TOLERANCE);
+            Assert.AreEqual(_generator.Height, worldHeight, TOLERANCE);
         }
 
         [Test]
